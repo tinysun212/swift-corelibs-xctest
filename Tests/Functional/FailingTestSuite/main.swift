@@ -13,11 +13,11 @@
 
 // CHECK: Test Suite 'PassingTestCase' started at \d+:\d+:\d+\.\d+
 class PassingTestCase: XCTestCase {
-    static var allTests: [(String, PassingTestCase -> () throws -> Void)] {
+    static var allTests = {
         return [
             ("test_passes", test_passes),
         ]
-    }
+    }()
 
 // CHECK: Test Case 'PassingTestCase.test_passes' started at \d+:\d+:\d+\.\d+
 // CHECK: Test Case 'PassingTestCase.test_passes' passed \(\d+\.\d+ seconds\).
@@ -30,13 +30,13 @@ class PassingTestCase: XCTestCase {
 
 // CHECK: Test Suite 'FailingTestCase' started at \d+:\d+:\d+\.\d+
 class FailingTestCase: XCTestCase {
-    static var allTests: [(String, FailingTestCase -> () throws -> Void)] {
+    static var allTests = {
         return [
             ("test_passes", test_passes),
             ("test_fails", test_fails),
             ("test_fails_with_message", test_fails_with_message),
         ]
-    }
+    }()
 
 // CHECK: Test Case 'FailingTestCase.test_passes' started at \d+:\d+:\d+\.\d+
 // CHECK: Test Case 'FailingTestCase.test_passes' passed \(\d+\.\d+ seconds\).
@@ -45,14 +45,14 @@ class FailingTestCase: XCTestCase {
     }
 
 // CHECK: Test Case 'FailingTestCase.test_fails' started at \d+:\d+:\d+\.\d+
-// CHECK: .*/FailingTestSuite/main.swift:\d+: error: FailingTestCase.test_fails : XCTAssertTrue failed - $
+// CHECK: .*/FailingTestSuite/main.swift:[[@LINE+3]]: error: FailingTestCase.test_fails : XCTAssertTrue failed - $
 // CHECK: Test Case 'FailingTestCase.test_fails' failed \(\d+\.\d+ seconds\).
     func test_fails() {
         XCTAssert(false)
     }
 
 // CHECK: Test Case 'FailingTestCase.test_fails_with_message' started at \d+:\d+:\d+\.\d+
-// CHECK: .*/FailingTestSuite/main.swift:\d+: error: FailingTestCase.test_fails_with_message : XCTAssertTrue failed - Foo bar.
+// CHECK: .*/FailingTestSuite/main.swift:[[@LINE+3]]: error: FailingTestCase.test_fails_with_message : XCTAssertTrue failed - Foo bar.
 // CHECK: Test Case 'FailingTestCase.test_fails_with_message' failed \(\d+\.\d+ seconds\).
     func test_fails_with_message() {
         XCTAssert(false, "Foo bar.")

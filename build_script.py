@@ -17,6 +17,7 @@ import sys
 import tempfile
 import textwrap
 import platform
+import errno
 
 SOURCE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -36,6 +37,19 @@ def _mkdirp(path):
     """
     if not os.path.exists(path):
         run("mkdir -p {}".format(path))
+
+
+def symlink_force(target, link_name):
+    if os.path.isdir(link_name):
+        link_name = os.path.join(link_name, os.path.basename(target))
+    try:
+        os.symlink(target, link_name)
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            os.remove(link_name)
+            os.symlink(target, link_name)
+        else:
+            raise e
 
 class DarwinStrategy:
     @staticmethod
@@ -114,12 +128,16 @@ class GenericUnixStrategy:
         build_dir = os.path.abspath(args.build_dir)
         foundation_build_dir = os.path.abspath(args.foundation_build_dir)
         core_foundation_build_dir = GenericUnixStrategy.core_foundation_build_dir(
-            foundation_build_dir)
+            foundation_build_dir, args.foundation_install_prefix)
+        if args.libdispatch_build_dir:
+            libdispatch_build_dir = os.path.abspath(args.libdispatch_build_dir)
+        if args.libdispatch_src_dir:
+            libdispatch_src_dir = os.path.abspath(args.libdispatch_src_dir)
 
         _mkdirp(build_dir)
 
         sourcePaths = glob.glob(os.path.join(
-            SOURCE_DIR, 'Sources', 'XCTest', '*.swift'))
+            SOURCE_DIR, 'Sources', 'XCTest', '*', '*.swift'))
 
         if args.build_style == "debug":
             style_options = "-g"
@@ -128,20 +146,32 @@ class GenericUnixStrategy:
 
         # Not incremental..
         # Build library
-        run("{swiftc} -c {style_options} -emit-object -emit-module "
+        if args.libdispatch_build_dir and args.libdispatch_src_dir:
+            libdispatch_args = "-I {libdispatch_build_dir}/src -I {libdispatch_src_dir} ".format(
+                libdispatch_build_dir=libdispatch_build_dir,
+                libdispatch_src_dir=libdispatch_src_dir)
+        else:
+            libdispatch_args = ""
+
+        run("{swiftc} -Xcc -fblocks -c {style_options} -emit-object -emit-module "
             "-module-name XCTest -module-link-name XCTest -parse-as-library "
             "-emit-module-path {build_dir}/XCTest.swiftmodule "
             "-force-single-frontend-invocation "
             "-I {foundation_build_dir} -I {core_foundation_build_dir} "
+            "{libdispatch_args} "
             "{source_paths} -o {build_dir}/XCTest.o".format(
                 swiftc=swiftc,
                 style_options=style_options,
                 build_dir=build_dir,
                 foundation_build_dir=foundation_build_dir,
                 core_foundation_build_dir=core_foundation_build_dir,
+                libdispatch_args=libdispatch_args,
                 source_paths=" ".join(sourcePaths)))
         run("{swiftc} -emit-library {build_dir}/XCTest.o "
             "-L {foundation_build_dir} -lswiftGlibc -lswiftCore -lFoundation -lm "
+            # We embed an rpath of `$ORIGIN` to ensure other referenced
+            # libraries (like `Foundation`) can be found solely via XCTest.
+            "-Xlinker -rpath=\\$ORIGIN "
             "-o {build_dir}/libXCTest.so".format(
                 swiftc=swiftc,
                 build_dir=build_dir,
@@ -188,18 +218,30 @@ class GenericUnixStrategy:
         tests_path = os.path.join(SOURCE_DIR, "Tests", "Functional")
         foundation_build_dir = os.path.abspath(args.foundation_build_dir)
         core_foundation_build_dir = GenericUnixStrategy.core_foundation_build_dir(
-            foundation_build_dir)
+            foundation_build_dir, args.foundation_install_prefix)
+        if args.libdispatch_build_dir:
+            libdispatch_build_dir = os.path.abspath(args.libdispatch_build_dir)
+            symlink_force(os.path.join(args.libdispatch_build_dir, "src", ".libs", "libdispatch.so"),
+                foundation_build_dir)
+        if args.libdispatch_src_dir and args.libdispatch_build_dir:
+            libdispatch_src_args = "LIBDISPATCH_SRC_DIR={libdispatch_src_dir} LIBDISPATCH_BUILD_DIR={libdispatch_build_dir}".format(
+                libdispatch_src_dir=os.path.abspath(args.libdispatch_src_dir),
+                libdispatch_build_dir=os.path.join(args.libdispatch_build_dir, 'src', '.libs'))
+        else:
+            libdispatch_src_args = ""
 
         run('SWIFT_EXEC={swiftc} '
             'BUILT_PRODUCTS_DIR={built_products_dir} '
             'FOUNDATION_BUILT_PRODUCTS_DIR={foundation_build_dir} '
             'CORE_FOUNDATION_BUILT_PRODUCTS_DIR={core_foundation_build_dir} '
+            '{libdispatch_src_args} '
             '{lit_path} {lit_flags} '
             '{tests_path}'.format(
                 swiftc=os.path.abspath(args.swiftc),
                 built_products_dir=args.build_dir,
                 foundation_build_dir=foundation_build_dir,
                 core_foundation_build_dir=core_foundation_build_dir,
+                libdispatch_src_args=libdispatch_src_args,
                 lit_path=lit_path,
                 lit_flags=lit_flags,
                 tests_path=tests_path))
@@ -233,7 +275,7 @@ class GenericUnixStrategy:
             os.path.join(module_install_path, xctest_swiftdoc)))
 
     @staticmethod
-    def core_foundation_build_dir(foundation_build_dir):
+    def core_foundation_build_dir(foundation_build_dir, foundation_install_prefix):
         """
         Given the path to a swift-corelibs-foundation built product directory,
         return the path to CoreFoundation built products.
@@ -244,7 +286,8 @@ class GenericUnixStrategy:
         include this extra path when linking the installed Swift's
         'usr/lib/swift/linux/libFoundation.so'.
         """
-        return os.path.join(foundation_build_dir, 'usr', 'lib', 'swift')
+        return os.path.join(foundation_build_dir,
+                            foundation_install_prefix.strip("/"), 'lib', 'swift')
 
 
 def main(args=sys.argv[1:]):
@@ -307,16 +350,28 @@ def main(args=sys.argv[1:]):
     build_parser.add_argument(
         "--build-dir",
         help="Path to the output build directory. If not specified, a "
-             "temporary directory is used",
+             "temporary directory is used.",
         default=tempfile.mkdtemp())
     build_parser.add_argument(
         "--foundation-build-dir",
         help="Path to swift-corelibs-foundation build products, which "
              "the built XCTest.so will be linked against.",
         required=strategy.requires_foundation_build_dir())
-    build_parser.add_argument("--swift-build-dir",
-                              help="deprecated, do not use")
-    build_parser.add_argument("--arch", help="deprecated, do not use")
+    build_parser.add_argument(
+        "--foundation-install-prefix",
+        help="Path to the installation location for swift-corelibs-foundation "
+             "build products ('%(default)s' by default); CoreFoundation "
+             "dependencies are expected to be found under "
+             "FOUNDATION_BUILD_DIR/FOUNDATION_INSTALL_PREFIX.",
+        default="/usr")
+    build_parser.add_argument(
+        "--libdispatch-build-dir",
+        help="Path to swift-corelibs-libdispatch build products, which "
+             "the built XCTest.so will be linked against.")
+    build_parser.add_argument(
+        "--libdispatch-src-dir",
+        help="Path to swift-corelibs-libdispatch source tree, which "
+             "the built XCTest.so will be linked against.")
     build_parser.add_argument(
         "--module-install-path",
         help="Location at which to install XCTest.swiftmodule and "
@@ -373,6 +428,21 @@ def main(args=sys.argv[1:]):
         help="Path to swift-corelibs-foundation build products, which the "
              "tests will be linked against.",
         required=strategy.requires_foundation_build_dir())
+    test_parser.add_argument(
+        "--foundation-install-prefix",
+        help="Path to the installation location for swift-corelibs-foundation "
+             "build products ('%(default)s' by default); CoreFoundation "
+             "dependencies are expected to be found under "
+             "FOUNDATION_BUILD_DIR/FOUNDATION_INSTALL_PREFIX.",
+        default="/usr")
+    test_parser.add_argument(
+        "--libdispatch-build-dir",
+        help="Path to swift-corelibs-libdispatch build products, which "
+             "the built XCTest.so will be linked against.")
+    test_parser.add_argument(
+        "--libdispatch-src-dir",
+        help="Path to swift-corelibs-libdispatch source tree, which "
+             "the built XCTest.so will be linked against.")
 
     install_parser = subparsers.add_parser(
         "install",

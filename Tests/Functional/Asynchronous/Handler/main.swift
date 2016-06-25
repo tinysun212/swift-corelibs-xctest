@@ -16,7 +16,7 @@
 // CHECK: Test Suite 'HandlerTestCase' started at \d+:\d+:\d+\.\d+
 class HandlerTestCase: XCTestCase {
 // CHECK: Test Case 'HandlerTestCase.test_whenExpectationsAreNotFulfilled_handlerCalled_andFails' started at \d+:\d+:\d+\.\d+
-// CHECK: .*/Tests/Functional/Asynchronous/Handler/main.swift:25: error: HandlerTestCase.test_whenExpectationsAreNotFulfilled_handlerCalled_andFails : Asynchronous wait failed - Exceeded timeout of 0.2 seconds, with unfulfilled expectations: fog
+// CHECK: .*/Tests/Functional/Asynchronous/Handler/main.swift:[[@LINE+6]]: error: HandlerTestCase.test_whenExpectationsAreNotFulfilled_handlerCalled_andFails : Asynchronous wait failed - Exceeded timeout of 0.2 seconds, with unfulfilled expectations: fog
 // CHECK: Test Case 'HandlerTestCase.test_whenExpectationsAreNotFulfilled_handlerCalled_andFails' failed \(\d+\.\d+ seconds\).
     func test_whenExpectationsAreNotFulfilled_handlerCalled_andFails() {
         self.expectation(withDescription: "fog")
@@ -45,12 +45,12 @@ class HandlerTestCase: XCTestCase {
         XCTAssertTrue(handlerWasCalled)
     }
 
-    static var allTests: [(String, HandlerTestCase -> () throws -> Void)] {
+    static var allTests = {
         return [
             ("test_whenExpectationsAreNotFulfilled_handlerCalled_andFails", test_whenExpectationsAreNotFulfilled_handlerCalled_andFails),
             ("test_whenExpectationsAreFulfilled_handlerCalled_andPasses", test_whenExpectationsAreFulfilled_handlerCalled_andPasses),
         ]
-    }
+    }()
 }
 // CHECK: Test Suite 'HandlerTestCase' failed at \d+:\d+:\d+\.\d+
 // CHECK: \t Executed 2 tests, with 1 failure \(0 unexpected\) in \d+\.\d+ \(\d+\.\d+\) seconds

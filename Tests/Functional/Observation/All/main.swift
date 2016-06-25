@@ -22,7 +22,7 @@ class Observer: XCTestObservation {
     var finishedTestSuites = [XCTestSuite]()
     var finishedBundlePaths = [String]()
 
-    func testBundleWillStart(_ testBundle: NSBundle) {
+    func testBundleWillStart(_ testBundle: Bundle) {
         startedBundlePaths.append(testBundle.bundlePath)
     }
 
@@ -46,7 +46,7 @@ class Observer: XCTestObservation {
         print("In \(#function): \(testSuite.name)")
     }
 
-    func testBundleDidFinish(_ testBundle: NSBundle) {
+    func testBundleDidFinish(_ testBundle: Bundle) {
         print("In \(#function)")
     }
 }
@@ -56,16 +56,16 @@ XCTestObservationCenter.shared().addTestObserver(observer)
 
 // CHECK: Test Suite 'Observation' started at \d+:\d+:\d+\.\d+
 class Observation: XCTestCase {
-    static var allTests: [(String, Observation -> () throws -> Void)] {
+    static var allTests = {
         return [
             ("test_one", test_one),
             ("test_two", test_two),
             ("test_three", test_three),
         ]
-    }
+    }()
 
 // CHECK: Test Case 'Observation.test_one' started at \d+:\d+:\d+\.\d+
-// CHECK: .*/Observation/All/main.swift:\d+: error: Observation.test_one : failed - fail!
+// CHECK: .*/Observation/All/main.swift:[[@LINE+12]]: error: Observation.test_one : failed - fail!
 // CHECK: Test Case 'Observation.test_one' failed \(\d+\.\d+ seconds\).
     func test_one() {
         XCTAssertEqual(observer.startedBundlePaths.count, 1)

@@ -21,7 +21,7 @@ class NotificationExpectationsTestCase: XCTestCase {
     func test_observeNotificationWithName_passes() {
         let notificationName = "notificationWithNameTest"
         expectation(forNotification: notificationName, object:nil)
-        NSNotificationCenter.defaultCenter().postNotificationName(notificationName, object: nil)
+        NotificationCenter.defaultCenter().postNotificationName(Notification.Name(rawValue: notificationName), object: nil)
         waitForExpectations(withTimeout: 0.0)
     }
     
@@ -31,7 +31,7 @@ class NotificationExpectationsTestCase: XCTestCase {
         let notificationName = "notificationWithNameAndObjectTest"
         let dummyObject = NSObject()
         expectation(forNotification: notificationName, object:dummyObject)
-        NSNotificationCenter.defaultCenter().postNotificationName(notificationName, object: dummyObject)
+        NotificationCenter.defaultCenter().postNotificationName(Notification.Name(rawValue: notificationName), object: dummyObject)
         waitForExpectations(withTimeout: 0.0)
     }
     
@@ -41,32 +41,32 @@ class NotificationExpectationsTestCase: XCTestCase {
         let notificationName = "notificationWithNameAndObject_expectNoObjectTest"
         expectation(forNotification: notificationName, object:nil)
         let dummyObject = NSObject()
-        NSNotificationCenter.defaultCenter().postNotificationName(notificationName, object: dummyObject)
+        NotificationCenter.defaultCenter().postNotificationName(Notification.Name(rawValue: notificationName), object: dummyObject)
         waitForExpectations(withTimeout: 0.0)
     }
     
 // CHECK: Test Case 'NotificationExpectationsTestCase.test_observeNotificationWithIncorrectName_fails' started at \d+:\d+:\d+\.\d+
-// CHECK: .*/Tests/Functional/Asynchronous/Notifications/Expectations/main.swift:54: error: NotificationExpectationsTestCase.test_observeNotificationWithIncorrectName_fails : Asynchronous wait failed - Exceeded timeout of 0.1 seconds, with unfulfilled expectations: Expect notification 'expectedName' from any object
+// CHECK: .*/Tests/Functional/Asynchronous/Notifications/Expectations/main.swift:[[@LINE+5]]: error: NotificationExpectationsTestCase.test_observeNotificationWithIncorrectName_fails : Asynchronous wait failed - Exceeded timeout of 0.1 seconds, with unfulfilled expectations: Expect notification 'expectedName' from any object
 // CHECK: Test Case 'NotificationExpectationsTestCase.test_observeNotificationWithIncorrectName_fails' failed \(\d+\.\d+ seconds\).
     func test_observeNotificationWithIncorrectName_fails() {
         expectation(forNotification: "expectedName", object: nil)
-        NSNotificationCenter.defaultCenter().postNotificationName("actualName", object: nil)
+        NotificationCenter.defaultCenter().postNotificationName(Notification.Name(rawValue: "actualName"), object: nil)
         waitForExpectations(withTimeout: 0.1)
     }
     
 // CHECK: Test Case 'NotificationExpectationsTestCase.test_observeNotificationWithIncorrectObject_fails' started at \d+:\d+:\d+\.\d+
-// CHECK: .*/Tests/Functional/Asynchronous/Notifications/Expectations/main.swift:66: error: NotificationExpectationsTestCase.test_observeNotificationWithIncorrectObject_fails : Asynchronous wait failed - Exceeded timeout of 0.1 seconds, with unfulfilled expectations: Expect notification 'notificationWithIncorrectObjectTest' from dummyObject
+// CHECK: .*/Tests/Functional/Asynchronous/Notifications/Expectations/main.swift:[[@LINE+8]]: error: NotificationExpectationsTestCase.test_observeNotificationWithIncorrectObject_fails : Asynchronous wait failed - Exceeded timeout of 0.1 seconds, with unfulfilled expectations: Expect notification 'notificationWithIncorrectObjectTest' from dummyObject
 // CHECK: Test Case 'NotificationExpectationsTestCase.test_observeNotificationWithIncorrectObject_fails' failed \(\d+\.\d+ seconds\).
     func test_observeNotificationWithIncorrectObject_fails() {
         let notificationName = "notificationWithIncorrectObjectTest"
         let dummyObject: NSString = "dummyObject"
         let anotherDummyObject = NSObject()
         expectation(forNotification: notificationName, object: dummyObject)
-        NSNotificationCenter.defaultCenter().postNotificationName(notificationName, object:anotherDummyObject)
+        NotificationCenter.defaultCenter().postNotificationName(Notification.Name(rawValue: notificationName), object:anotherDummyObject)
         waitForExpectations(withTimeout: 0.1)
     }
     
-    static var allTests: [(String, NotificationExpectationsTestCase -> () throws -> Void)] {
+    static var allTests = {
         return [
                    ("test_observeNotificationWithName_passes", test_observeNotificationWithName_passes),
                    ("test_observeNotificationWithNameAndObject_passes", test_observeNotificationWithNameAndObject_passes),
@@ -74,7 +74,7 @@ class NotificationExpectationsTestCase: XCTestCase {
                    ("test_observeNotificationWithIncorrectName_fails", test_observeNotificationWithIncorrectName_fails),
                    ("test_observeNotificationWithIncorrectObject_fails", test_observeNotificationWithIncorrectObject_fails),
         ]
-    }
+    }()
 }
 // CHECK: Test Suite 'NotificationExpectationsTestCase' failed at \d+:\d+:\d+\.\d+
 // CHECK: \t Executed 5 tests, with 2 failures \(0 unexpected\) in \d+\.\d+ \(\d+\.\d+\) seconds
