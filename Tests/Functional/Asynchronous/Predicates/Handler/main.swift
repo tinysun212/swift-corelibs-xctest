@@ -1,5 +1,5 @@
-// RUN: %{swiftc} %s -o %{built_tests_dir}/Asynchronous-Predicates-Handler
-// RUN: %{built_tests_dir}/Asynchronous-Predicates-Handler > %t || true
+// RUN: %{swiftc} %s -o %T/Asynchronous-Predicates-Handler
+// RUN: %T/Asynchronous-Predicates-Handler > %t || true
 // RUN: %{xctest_checker} %t %s
 
 #if os(Linux) || os(FreeBSD)
@@ -23,7 +23,7 @@ class PredicateHandlerTestCase: XCTestCase {
         self.expectation(for: predicate, evaluatedWith: object, handler: { _ in
             return true
         })
-        waitForExpectations(withTimeout: 0.1)
+        waitForExpectations(timeout: 0.1)
     }
     // CHECK: Test Case 'PredicateHandlerTestCase.test_predicateIsTrue_handlerReturnsFalse_fails' started at \d+:\d+:\d+\.\d+
     // CHECK: .*/Tests/Functional/Asynchronous/Predicates/Handler/main.swift:[[@LINE+8]]: error: PredicateHandlerTestCase.test_predicateIsTrue_handlerReturnsFalse_fails : Asynchronous wait failed - Exceeded timeout of 0.1 seconds, with unfulfilled expectations: Expect `<Predicate: 0x[0-9a-fA-F]{1,16}>` for object <NSObject: 0x[0-9a-fA-F]{1,16}>
@@ -34,7 +34,7 @@ class PredicateHandlerTestCase: XCTestCase {
         self.expectation(for: predicate, evaluatedWith: object, handler: { _ in
             return false
         })
-        waitForExpectations(withTimeout: 0.1)
+        waitForExpectations(timeout: 0.1)
     }
     
     // CHECK: Test Case 'PredicateHandlerTestCase.test_predicateIsTrueAfterTimeout_handlerIsNotCalled_fails' started at \d+:\d+:\d+\.\d+
@@ -52,7 +52,7 @@ class PredicateHandlerTestCase: XCTestCase {
             XCTFail("Should not call the predicate expectation handler")
             return true
         })
-        waitForExpectations(withTimeout: 0.1, handler: nil)
+        waitForExpectations(timeout: 0.1, handler: nil)
     }
     
     static var allTests = {
