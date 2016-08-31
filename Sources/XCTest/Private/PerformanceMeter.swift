@@ -112,19 +112,18 @@ public final class PerformanceMeter {
         self.invocationLine = line
     }
 
-    static func measureMetrics(_ metricNames: [String], delegate: PerformanceMeterDelegate, file: StaticString = #file, line: UInt = #line, for block: @noescape (PerformanceMeter) -> Void) {
+    static func measureMetrics(_ metricNames: [String], delegate: PerformanceMeterDelegate, file: StaticString = #file, line: UInt = #line, for block: (PerformanceMeter) -> Void) {
         do {
             let metrics = try self.metrics(forNames: metricNames)
             let meter = PerformanceMeter(metrics: metrics, delegate: delegate, file: file, line: line)
             meter.measure(block)
         } catch let e {
-            delegate.recordAPIViolation(description: String(e), file: file, line: line)
+            delegate.recordAPIViolation(description: String(describing: e), file: file, line: line)
         }
     }
 
     func startMeasuring(file: StaticString = #file, line: UInt = #line) {
         guard state == .iterationUnstarted else {
-            state = .measurementAborted
             return recordAPIViolation(.startMeasuringAlreadyCalled, file: file, line: line)
         }
         state = .iterationStarted
@@ -164,7 +163,7 @@ public final class PerformanceMeter {
         return 10
     }
 
-    private func measure(_ block: @noescape (PerformanceMeter) -> Void) {
+    private func measure(_ block: (PerformanceMeter) -> Void) {
         for _ in (0..<numberOfIterations) {
             state = .iterationUnstarted
 
@@ -186,7 +185,7 @@ public final class PerformanceMeter {
 
     private func stopMeasuringIfNeeded() {
         if state == .iterationStarted {
-            stopMeasuring()
+            stopMeasuring(file: invocationFile, line: invocationLine)
         }
     }
 
@@ -204,6 +203,6 @@ public final class PerformanceMeter {
 
     private func recordAPIViolation(_ error: Error, file: StaticString, line: UInt) {
         state = .measurementAborted
-        delegate.recordAPIViolation(description: String(error), file: file, line: line)
+        delegate.recordAPIViolation(description: String(describing: error), file: file, line: line)
     }
 }

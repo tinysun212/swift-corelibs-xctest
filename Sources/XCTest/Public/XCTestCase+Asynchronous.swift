@@ -39,7 +39,7 @@ public extension XCTestCase {
     ///   between these environments. To ensure compatibility of tests between
     ///   swift-corelibs-xctest and Apple XCTest, it is not recommended to pass
     ///   explicit values for `file` and `line`.
-    func expectation(description: String, file: StaticString = #file, line: UInt = #line) -> XCTestExpectation {
+    @discardableResult func expectation(description: String, file: StaticString = #file, line: UInt = #line) -> XCTestExpectation {
         let expectation = XCTestExpectation(
             description: description,
             file: file,
@@ -85,7 +85,7 @@ public extension XCTestCase {
         if _allExpectations.count == 0 {
             recordFailure(
                 withDescription: "API violation - call made to wait without any expectations having been set.",
-                inFile: String(file),
+                inFile: String(describing: file),
                 atLine: line,
                 expected: false)
             return
@@ -103,7 +103,7 @@ public extension XCTestCase {
         //        been fulfilled, it would be more efficient to use a runloop
         //        source that can be signaled to wake up when an expectation is
         //        fulfilled.
-        let runLoop = RunLoop.current()
+        let runLoop = RunLoop.current
         let timeoutDate = Date(timeIntervalSinceNow: timeout)
         repeat {
             unfulfilledDescriptions = []
@@ -129,7 +129,7 @@ public extension XCTestCase {
             let descriptions = unfulfilledDescriptions.joined(separator: ", ")
             recordFailure(
                 withDescription: "Asynchronous wait failed - Exceeded timeout of \(timeout) seconds, with unfulfilled expectations: \(descriptions)",
-                inFile: String(file),
+                inFile: String(describing: file),
                 atLine: line,
                 expected: true)
         }
@@ -164,21 +164,21 @@ public extension XCTestCase {
     ///   notification is observed. It will not be invoked on timeout. Use the
     ///   handler to further investigate if the notification fulfills the
     ///   expectation.
-    func expectation(forNotification notificationName: String, object objectToObserve: AnyObject?, handler: XCNotificationExpectationHandler? = nil) -> XCTestExpectation {
+    @discardableResult func expectation(forNotification notificationName: String, object objectToObserve: AnyObject?, handler: XCNotificationExpectationHandler? = nil) -> XCTestExpectation {
         let objectDescription = objectToObserve == nil ? "any object" : "\(objectToObserve!)"
         let expectation = self.expectation(description: "Expect notification '\(notificationName)' from " + objectDescription)
         // Start observing the notification with specified name and object.
         var observer: NSObjectProtocol? = nil
         func removeObserver() {
-            if let observer = observer as? AnyObject {
-                NotificationCenter.defaultCenter().removeObserver(observer)
+            if let observer = observer {
+                NotificationCenter.default.removeObserver(observer)
             }
         }
 
         weak var weakExpectation = expectation
         observer = NotificationCenter
-            .defaultCenter()
-            .addObserverForName(Notification.Name(rawValue: notificationName),
+            .default
+            .addObserver(forName: Notification.Name(rawValue: notificationName),
                                 object: objectToObserve,
                                 queue: nil,
                                 usingBlock: {
@@ -226,7 +226,7 @@ public extension XCTestCase {
     ///   first successful evaluation will fulfill the expectation. If provided,
     ///   the handler can override that behavior which leaves the caller
     ///   responsible for fulfilling the expectation.
-    func expectation(for predicate: Predicate, evaluatedWith object: AnyObject, file: StaticString = #file, line: UInt = #line, handler: XCPredicateExpectationHandler? = nil) -> XCTestExpectation {
+    @discardableResult func expectation(for predicate: NSPredicate, evaluatedWith object: AnyObject, file: StaticString = #file, line: UInt = #line, handler: XCPredicateExpectationHandler? = nil) -> XCTestExpectation {
         let expectation = XCPredicateExpectation(
             predicate: predicate,
             object: object,
@@ -248,7 +248,7 @@ internal extension XCTestCase {
         if expectations.count > 0 {
             recordFailure(
                 withDescription: "Failed due to unwaited expectations.",
-                inFile: String(expectations.last!.file),
+                inFile: String(describing: expectations.last!.file),
                 atLine: expectations.last!.line,
                 expected: false)
         }

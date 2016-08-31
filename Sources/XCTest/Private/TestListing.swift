@@ -52,7 +52,7 @@ protocol Listable {
 }
 
 private func moduleName(value: Any) -> String {
-    let moduleAndType = String(reflecting: value.dynamicType)
+    let moduleAndType = String(reflecting: type(of: value))
     return String(moduleAndType.characters.split(separator: ".").first!)
 }
 
@@ -63,7 +63,7 @@ extension XCTestSuite: Listable {
     }
 
     private var listingName: String {
-        if let childTestCase = tests.first as? XCTestCase, name == String(childTestCase.dynamicType) {
+        if let childTestCase = tests.first as? XCTestCase, name == String(describing: type(of: childTestCase)) {
             return "\(moduleName(value: childTestCase)).\(name)"
         } else {
             return name
@@ -75,11 +75,11 @@ extension XCTestSuite: Listable {
     }
 
     func dictionaryRepresentation() -> NSDictionary {
-        let listedTests = tests.flatMap({ ($0 as? Listable)?.dictionaryRepresentation() })
-        return [
-                   "name": listingName.bridge(),
-                   "tests": listedTests.bridge()
-            ].bridge()
+        let listedTests = NSArray(array: tests.flatMap({ ($0 as? Listable)?.dictionaryRepresentation() }))
+        return NSDictionary(objects: [NSString(string: listingName),
+                                      listedTests],
+                            forKeys: [NSString(string: "name"),
+                                      NSString(string: "tests")])
     }
 
     func findBundleTestSuite() -> XCTestSuite? {
@@ -102,6 +102,6 @@ extension XCTestCase: Listable {
 
     func dictionaryRepresentation() -> NSDictionary {
         let methodName = String(name.characters.split(separator: ".").last!)
-        return ["name": methodName].bridge()
+        return NSDictionary(object: NSString(string: methodName), forKey: NSString(string: "name"))
     }
 }

@@ -44,7 +44,7 @@ internal final class WallClockTimeMetric: PerformanceMetric {
                           String(format: "average: %.3f", measurements.average),
                           String(format: "relative standard deviation: %.3f%%", measurements.relativeStandardDeviation),
                           "values: [\(measurements.map({ String(format: "%.6f", $0) }).joined(separator: ", "))]",
-                          "performanceMetricID:\(self.dynamicType.name)",
+                          "performanceMetricID:\(type(of: self).name)",
                           String(format: "maxPercentRelativeStandardDeviation: %.3f%%", maxRelativeStandardDeviation),
                           String(format: "maxStandardDeviation: %.3f", standardDeviationNegligibilityThreshold),
                           ]
@@ -62,20 +62,20 @@ internal final class WallClockTimeMetric: PerformanceMetric {
     }
 
     private func currentTime() -> TimeInterval {
-        return ProcessInfo.processInfo().systemUptime
+        return ProcessInfo.processInfo.systemUptime
     }
 }
 
 
 private extension Collection where Index: ExpressibleByIntegerLiteral, Iterator.Element == WallClockTimeMetric.Measurement {
     var average: WallClockTimeMetric.Measurement {
-        return self.reduce(0, combine: +) / Double(count.toIntMax())
+        return self.reduce(0, +) / Double(count.toIntMax())
     }
 
     var standardDeviation: WallClockTimeMetric.Measurement {
         let average = self.average
         let squaredDifferences = self.map({ pow($0 - average, 2.0) })
-        let variance = squaredDifferences.reduce(0, combine: +) / Double(count.toIntMax()-1)
+        let variance = squaredDifferences.reduce(0, +) / Double(count.toIntMax()-1)
         return sqrt(variance)
     }
 

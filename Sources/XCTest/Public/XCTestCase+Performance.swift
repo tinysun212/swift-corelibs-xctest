@@ -50,7 +50,7 @@ public extension XCTestCase {
     ///   ensure compatibility of tests between swift-corelibs-xctest and Apple
     ///   XCTest, it is not recommended to pass explicit values for `file` and `line`.
     func measure(file: StaticString = #file, line: UInt = #line, block: () -> Void) {
-        measureMetrics(self.dynamicType.defaultPerformanceMetrics(),
+        measureMetrics(type(of: self).defaultPerformanceMetrics(),
                        automaticallyStartMeasuring: true,
                        file: file,
                        line: line,
@@ -66,7 +66,7 @@ public extension XCTestCase {
     /// may interfere the API will measure them separately.
     ///
     ///     func testMyFunction2_WallClockTime() {
-    ///         measureMetrics(self.dynamicType.defaultPerformanceMetrics(), automaticallyStartMeasuring: false) {
+    ///         measureMetrics(type(of: self).defaultPerformanceMetrics(), automaticallyStartMeasuring: false) {
     ///
     ///             // Do setup work that needs to be done for every iteration but
     ///             // you don't want to measure before the call to `startMeasuring()`
@@ -111,7 +111,7 @@ public extension XCTestCase {
         PerformanceMeter.measureMetrics(metrics, delegate: self, file: file, line: line) { meter in
             self._performanceMeter = meter
             if automaticallyStartMeasuring {
-                meter.startMeasuring()
+                meter.startMeasuring(file: file, line: line)
             }
             block()
         }
@@ -151,7 +151,7 @@ public extension XCTestCase {
 extension XCTestCase: PerformanceMeterDelegate {
     internal func recordAPIViolation(description: String, file: StaticString, line: UInt) {
         recordFailure(withDescription: "API violation - \(description)",
-                      inFile: String(file),
+                      inFile: String(describing: file),
                       atLine: line,
                       expected: false)
     }
@@ -161,6 +161,6 @@ extension XCTestCase: PerformanceMeterDelegate {
     }
 
     internal func recordFailure(description: String, file: StaticString, line: UInt) {
-        recordFailure(withDescription: "failed: " + description, inFile: String(file), atLine: line, expected: true)
+        recordFailure(withDescription: "failed: " + description, inFile: String(describing: file), atLine: line, expected: true)
     }
 }
