@@ -11,7 +11,7 @@
 //  Methods on XCTestCase for testing asynchronous operations
 //
 
-#if os(Linux) || os(FreeBSD)
+#if os(Linux) || os(FreeBSD) || CYGWIN
     import Foundation
 #else
     import SwiftFoundation

@@ -11,10 +11,21 @@
 //  Prints test progress to stdout.
 //
 
-#if os(Linux) || os(FreeBSD)
+#if os(Linux) || os(FreeBSD) || CYGWIN
     import Foundation
 #else
     import SwiftFoundation
+#endif
+
+#if CYGWIN
+public var stdout : UnsafeMutablePointer<__FILE>! {
+    get {
+        if let reent = __getreent() {
+            return reent.pointee._stdout
+        }
+        return nil
+    }
+}
 #endif
 
 /// Prints textual representations of each XCTestObservation event to stdout.

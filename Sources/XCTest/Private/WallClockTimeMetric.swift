@@ -11,7 +11,7 @@
 //  Performance metric measuring how long it takes code to execute
 //
 
-#if os(Linux) || os(FreeBSD)
+#if os(Linux) || os(FreeBSD) || CYGWIN
     import Foundation
 #else
     import SwiftFoundation

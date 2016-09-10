@@ -2,7 +2,7 @@
 // RUN: %T/Asynchronous-Notifications-Handler > %t || true
 // RUN: %{xctest_checker} %t %s
 
-#if os(Linux) || os(FreeBSD)
+#if os(Linux) || os(FreeBSD) || CYGWIN
     import XCTest
     import Foundation
 #else

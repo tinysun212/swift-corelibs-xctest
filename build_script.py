@@ -172,6 +172,7 @@ class GenericUnixStrategy:
             "-emit-module-path {build_dir}/XCTest.swiftmodule "
             "-force-single-frontend-invocation "
             "-I {foundation_build_dir} -I {core_foundation_build_dir} "
+            "-I /usr/include -D CYGWIN "
             "{libdispatch_args} "
             "{source_paths} -o {build_dir}/XCTest.o".format(
                 swiftc=swiftc,
@@ -186,7 +187,7 @@ class GenericUnixStrategy:
             # We embed an rpath of `$ORIGIN` to ensure other referenced
             # libraries (like `Foundation`) can be found solely via XCTest.
             "-Xlinker -rpath=\\$ORIGIN "
-            "-o {build_dir}/libXCTest.so".format(
+            "-o {build_dir}/libXCTest.dll".format(
                 swiftc=swiftc,
                 build_dir=build_dir,
                 foundation_build_dir=foundation_build_dir))
@@ -273,7 +274,7 @@ class GenericUnixStrategy:
         _mkdirp(module_install_path)
         _mkdirp(library_install_path)
 
-        xctest_so = "libXCTest.so"
+        xctest_so = "libXCTest.dll"
         run("cp {} {}".format(
             os.path.join(build_dir, xctest_so),
             os.path.join(library_install_path, xctest_so)))
