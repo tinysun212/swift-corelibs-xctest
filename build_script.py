@@ -109,8 +109,7 @@ class DarwinStrategy:
             "-configuration {style_options} "
             "SWIFT_EXEC=\"{swiftc}\" "
             "SWIFT_LINK_OBJC_RUNTIME=YES "
-            "SYMROOT=\"{build_dir}\" OBJROOT=\"{build_dir}\" "
-            "| grep -v \"    export\"".format(
+            "SYMROOT=\"{build_dir}\" OBJROOT=\"{build_dir}\" ".format(
                 swiftc=swiftc,
                 build_dir=build_dir,
                 style_options=style_options,
@@ -239,9 +238,13 @@ class GenericUnixStrategy:
             symlink_force(os.path.join(args.libdispatch_build_dir, "src", ".libs", "libdispatch.so"),
                 foundation_build_dir)
         if args.libdispatch_src_dir and args.libdispatch_build_dir:
-            libdispatch_src_args = "LIBDISPATCH_SRC_DIR={libdispatch_src_dir} LIBDISPATCH_BUILD_DIR={libdispatch_build_dir}".format(
-                libdispatch_src_dir=os.path.abspath(args.libdispatch_src_dir),
-                libdispatch_build_dir=os.path.join(args.libdispatch_build_dir, 'src', '.libs'))
+            libdispatch_src_args = ( 
+               "LIBDISPATCH_SRC_DIR={libdispatch_src_dir} "
+               "LIBDISPATCH_BUILD_DIR={libdispatch_build_dir} "
+               "LIBDISPATCH_OVERLAY_DIR={libdispatch_overlay_dir}".format(
+                   libdispatch_src_dir=os.path.abspath(args.libdispatch_src_dir),
+                   libdispatch_build_dir=os.path.join(args.libdispatch_build_dir, 'src', '.libs'),
+                   libdispatch_overlay_dir=os.path.join(args.libdispatch_build_dir, 'src', 'swift')))
         else:
             libdispatch_src_args = ""
 
