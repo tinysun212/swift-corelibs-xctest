@@ -12,12 +12,6 @@
 //  fulfilled times out.
 //
 
-#if os(Linux) || os(FreeBSD) || CYGWIN
-    import Foundation
-#else
-    import SwiftFoundation
-#endif
-
 /// A block to be invoked when a call to wait times out or has had all
 /// associated expectations fulfilled.
 ///

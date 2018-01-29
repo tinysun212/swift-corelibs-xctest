@@ -11,13 +11,9 @@
 //  Prints test progress to stdout.
 //
 
-#if os(Linux) || os(FreeBSD) || CYGWIN
-    import Foundation
-#else
-    import SwiftFoundation
-#endif
-
 #if CYGWIN
+import Newlib
+
 public var stdout : UnsafeMutablePointer<__FILE>! {
     get {
         if let reent = __getreent() {
@@ -49,10 +45,7 @@ internal class PrintObserver: XCTestObservation {
     func testCaseDidFinish(_ testCase: XCTestCase) {
         let testRun = testCase.testRun!
         let verb = testRun.hasSucceeded ? "passed" : "failed"
-        // FIXME: Apple XCTest does not print a period after "(N seconds)".
-        //        The trailing period here should be removed and the functional
-        //        test suite should be updated.
-        printAndFlush("Test Case '\(testCase.name)' \(verb) (\(formatTimeInterval(testRun.totalDuration)) seconds).")
+        printAndFlush("Test Case '\(testCase.name)' \(verb) (\(formatTimeInterval(testRun.totalDuration)) seconds)")
     }
 
     func testSuiteDidFinish(_ testSuite: XCTestSuite) {
@@ -73,7 +66,7 @@ internal class PrintObserver: XCTestObservation {
 
     private lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss.SSS"
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
         return formatter
     }()
 

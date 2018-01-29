@@ -11,12 +11,6 @@
 //  Expectations with a specified predicate and object to evaluate.
 //
 
-#if os(Linux) || os(FreeBSD) || CYGWIN
-    import Foundation
-#else
-    import SwiftFoundation
-#endif
-
 internal class XCPredicateExpectation: XCTestExpectation {
     internal let predicate: NSPredicate
     internal let object: AnyObject

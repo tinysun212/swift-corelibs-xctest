@@ -11,12 +11,6 @@
 //  A test run for an `XCTestSuite`.
 //
 
-#if os(Linux) || os(FreeBSD) || CYGWIN
-    import Foundation
-#else
-    import SwiftFoundation
-#endif
-
 /// A test run for an `XCTestSuite`.
 open class XCTestSuiteRun: XCTestRun {
     /// The combined `testDuration` of each test case run in the suite.

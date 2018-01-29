@@ -12,12 +12,6 @@
 //  observed.
 //
 
-#if os(Linux) || os(FreeBSD) || CYGWIN
-    import Foundation
-#else
-    import SwiftFoundation
-#endif
-
 /// A block to be invoked when a notification specified by the expectation is
 /// observed.
 ///

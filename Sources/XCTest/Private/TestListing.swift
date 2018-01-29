@@ -11,12 +11,6 @@
 //  Implementation of the mode for printing the list of tests.
 //
 
-#if os(Linux) || os(FreeBSD) || CYGWIN
-    import Foundation
-#else
-    import SwiftFoundation
-#endif
-
 internal struct TestListing {
     private let testSuite: XCTestSuite
 

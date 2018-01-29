@@ -10,7 +10,7 @@
 # See http://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
 import argparse
-import glob
+import fnmatch
 import os
 import subprocess
 import sys
@@ -37,6 +37,19 @@ def _mkdirp(path):
     """
     if not os.path.exists(path):
         run("mkdir -p {}".format(path))
+
+
+def _find_files_with_extension(path, extension):
+    """
+    In Python 3.5 and above, glob supports recursive patterns such as
+    '**/*.swift'. This function backports that functionality to Python 3.4
+    and below.
+    """
+    paths = []
+    for root, _, file_names in os.walk(path):
+        for file_name in fnmatch.filter(file_names, '*.{}'.format(extension)):
+            paths.append(os.path.join(root, file_name))
+    return paths
 
 
 def symlink_force(target, link_name):
@@ -78,6 +91,7 @@ class DarwinStrategy:
             "-configuration {style_options} "
             "SWIFT_EXEC=\"{swiftc}\" "
             "SWIFT_LINK_OBJC_RUNTIME=YES "
+            "INDEX_ENABLE_DATA_STORE=NO "
             "SYMROOT=\"{build_dir}\" OBJROOT=\"{build_dir}\"".format(
                 swiftc=swiftc,
                 build_dir=build_dir,
@@ -109,6 +123,7 @@ class DarwinStrategy:
             "-configuration {style_options} "
             "SWIFT_EXEC=\"{swiftc}\" "
             "SWIFT_LINK_OBJC_RUNTIME=YES "
+            "INDEX_ENABLE_DATA_STORE=NO "
             "SYMROOT=\"{build_dir}\" OBJROOT=\"{build_dir}\" ".format(
                 swiftc=swiftc,
                 build_dir=build_dir,
@@ -139,6 +154,7 @@ class GenericUnixStrategy:
         """
         swiftc = os.path.abspath(args.swiftc)
         build_dir = os.path.abspath(args.build_dir)
+        static_lib_build_dir = GenericUnixStrategy.static_lib_build_dir(build_dir)
         foundation_build_dir = os.path.abspath(args.foundation_build_dir)
         core_foundation_build_dir = GenericUnixStrategy.core_foundation_build_dir(
             foundation_build_dir, args.foundation_install_prefix)
@@ -149,8 +165,9 @@ class GenericUnixStrategy:
 
         _mkdirp(build_dir)
 
-        sourcePaths = glob.glob(os.path.join(
-            SOURCE_DIR, 'Sources', 'XCTest', '*', '*.swift'))
+        sourcePaths = _find_files_with_extension(
+                os.path.join(SOURCE_DIR, 'Sources', 'XCTest'),
+                'swift')
 
         if args.build_style == "debug":
             style_options = "-g"
@@ -166,10 +183,12 @@ class GenericUnixStrategy:
         else:
             libdispatch_args = ""
 
+        # NOTE: Force -swift-version 4 to build XCTest sources.
         run("{swiftc} -Xcc -fblocks -c {style_options} -emit-object -emit-module "
             "-module-name XCTest -module-link-name XCTest -parse-as-library "
             "-emit-module-path {build_dir}/XCTest.swiftmodule "
             "-force-single-frontend-invocation "
+            "-swift-version 4 "
             "-I {foundation_build_dir} -I {core_foundation_build_dir} "
             "-I /usr/include -D CYGWIN "
             "{libdispatch_args} "
@@ -191,6 +210,12 @@ class GenericUnixStrategy:
                 build_dir=build_dir,
                 foundation_build_dir=foundation_build_dir))
 
+        # Build the static library.
+        run("mkdir -p {static_lib_build_dir}".format(static_lib_build_dir=static_lib_build_dir))
+        run("ar rcs {static_lib_build_dir}/libXCTest.a {build_dir}/XCTest.o".format(
+            static_lib_build_dir=static_lib_build_dir,
+            build_dir=build_dir))
+
         if args.test:
             # Execute main() using the arguments necessary to run the tests.
             main(args=["test",
@@ -202,9 +227,13 @@ class GenericUnixStrategy:
         # we also install the built XCTest products.
         if args.module_path is not None and args.lib_path is not None:
             # Execute main() using the arguments necessary for installation.
-            main(args=["install", build_dir,
+            install_args = ["install", build_dir,
                        "--module-install-path", args.module_path,
-                       "--library-install-path", args.lib_path])
+                       "--library-install-path", args.lib_path]
+            if args.static_lib_path:
+                       install_args += ["--static-library-install-path",
+                           args.static_lib_path]
+            main(args=install_args)
 
         note('Done.')
 
@@ -271,6 +300,7 @@ class GenericUnixStrategy:
         products into the given module and library paths.
         """
         build_dir = os.path.abspath(args.build_dir)
+        static_lib_build_dir = GenericUnixStrategy.static_lib_build_dir(build_dir)
         module_install_path = os.path.abspath(args.module_install_path)
         library_install_path = os.path.abspath(args.library_install_path)
 
@@ -292,6 +322,14 @@ class GenericUnixStrategy:
             os.path.join(build_dir, xctest_swiftdoc),
             os.path.join(module_install_path, xctest_swiftdoc)))
 
+        if args.static_library_install_path:
+               static_library_install_path = os.path.abspath(args.static_library_install_path)
+               _mkdirp(static_library_install_path)
+               xctest_a = "libXCTest.a"
+               run("cp {} {}".format(
+                   os.path.join(static_lib_build_dir, xctest_a),
+                   os.path.join(static_library_install_path, xctest_a)))
+
     @staticmethod
     def core_foundation_build_dir(foundation_build_dir, foundation_install_prefix):
         """
@@ -306,6 +344,16 @@ class GenericUnixStrategy:
         """
         return os.path.join(foundation_build_dir,
                             foundation_install_prefix.strip("/"), 'lib', 'swift')
+
+    @staticmethod
+    def static_lib_build_dir(build_dir):
+        """
+        Given the path to the build directory, return the path to be used for
+        the static library libXCTest.a. Putting it in a separate directory to
+        libXCTest.so simplifies static linking when building a static test
+        foundation.
+        """
+        return os.path.join(build_dir, "static")
 
 
 def main(args=sys.argv[1:]):
@@ -337,6 +385,7 @@ def main(args=sys.argv[1:]):
                 --build-dir="/tmp/XCTest_build" \\
                 --foundation-build-dir "/swift/usr/lib/swift/linux" \\
                 --library-install-path="/swift/usr/lib/swift/linux" \\
+                --static-library-install-path="/swift/usr/lib/swift_static/linux" \\
                 --module-install-path="/swift/usr/lib/swift/linux/x86_64"
 
             Note that installation is not supported on Darwin as this library
@@ -401,6 +450,11 @@ def main(args=sys.argv[1:]):
         help="Location at which to install XCTest.so. This directory will be "
              "created if it doesn't already exist.",
         dest="lib_path")
+    build_parser.add_argument(
+        "--static-library-install-path",
+        help="Location at which to install XCTest.a. This directory will be "
+             "created if it doesn't already exist.",
+        dest="static_lib_path")
     build_parser.add_argument(
         "--release",
         help="builds for release",
@@ -492,6 +546,10 @@ def main(args=sys.argv[1:]):
     install_parser.add_argument(
         "-l", "--library-install-path",
         help="Location at which to install XCTest.so. This directory will be "
+             "created if it doesn't already exist.")
+    install_parser.add_argument(
+        "-s", "--static-library-install-path",
+        help="Location at which to install XCTest.a. This directory will be "
              "created if it doesn't already exist.")
 
     # Many versions of Python require a subcommand must be specified.

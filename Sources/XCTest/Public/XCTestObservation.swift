@@ -11,12 +11,6 @@
 //  Hooks for being notified about progress during a test run.
 //
 
-#if os(Linux) || os(FreeBSD) || CYGWIN
-    import Foundation
-#else
-    import SwiftFoundation
-#endif
-
 /// `XCTestObservation` provides hooks for being notified about progress during a
 /// test run.
 /// - seealso: `XCTestObservationCenter`

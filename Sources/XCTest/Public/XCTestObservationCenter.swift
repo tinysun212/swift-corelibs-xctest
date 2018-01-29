@@ -11,12 +11,6 @@
 //  Notification center for test run progress events.
 //
 
-#if os(Linux) || os(FreeBSD) || CYGWIN
-    import Foundation
-#else
-    import SwiftFoundation
-#endif
-
 /// Provides a registry for objects wishing to be informed about progress
 /// during the course of a test run. Observers must implement the
 /// `XCTestObservation` protocol

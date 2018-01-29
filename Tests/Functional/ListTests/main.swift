@@ -5,12 +5,10 @@
 // RUN: %T/ListTests --verify %t_json > %t_verify
 // RUN: %{xctest_checker} %t_verify verify_json.expected
 
-#if os(Linux) || os(FreeBSD) || CYGWIN
-    import XCTest
-    import Foundation
-#else
+#if os(macOS)
     import SwiftXCTest
-    import SwiftFoundation
+#else
+    import XCTest
 #endif
 
 // The JSON output isn't a stable enough format to use FileCheck-style line

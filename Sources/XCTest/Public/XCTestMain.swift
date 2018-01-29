@@ -12,12 +12,20 @@
 //  for running tests and some infrastructure for running them.
 //
 
-#if os(Linux) || os(FreeBSD) || CYGWIN
-    import Glibc
-    import Foundation
+// Note that we are re-exporting Foundation so tests importing XCTest don't need
+// to import it themselves. This is consistent with the behavior of Apple XCTest
+#if os(macOS)
+    @_exported import SwiftFoundation
 #else
+    @_exported import Foundation
+#endif
+
+#if os(macOS)
     import Darwin
-    import SwiftFoundation
+#elseif os(Linux) || os(FreeBSD)
+    import Glibc
+#elseif CYGWIN
+    import Newlib
 #endif
 
 /// Starts a test run for the specified test cases.
@@ -93,4 +101,3 @@ public func XCTMain(_ testCases: [XCTestCaseEntry]) -> Never {
         exit(rootTestSuite.testRun!.totalFailureCount == 0 ? 0 : 1)
     }
 }
-

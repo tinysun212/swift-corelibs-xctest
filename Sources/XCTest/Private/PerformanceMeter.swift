@@ -11,12 +11,6 @@
 //  Measures the performance of a block of code and reports the results.
 //
 
-#if os(Linux) || os(FreeBSD) || CYGWIN
-    import Foundation
-#else
-    import SwiftFoundation
-#endif
-
 /// Describes a type that is capable of measuring some aspect of code performance
 /// over time.
 internal protocol PerformanceMetric {
