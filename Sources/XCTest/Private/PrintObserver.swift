@@ -11,19 +11,6 @@
 //  Prints test progress to stdout.
 //
 
-#if CYGWIN
-import Newlib
-
-public var stdout : UnsafeMutablePointer<__FILE>! {
-    get {
-        if let reent = __getreent() {
-            return reent.pointee._stdout
-        }
-        return nil
-    }
-}
-#endif
-
 /// Prints textual representations of each XCTestObservation event to stdout.
 /// Mirrors the Apple XCTest output exactly.
 internal class PrintObserver: XCTestObservation {

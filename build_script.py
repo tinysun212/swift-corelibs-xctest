@@ -190,7 +190,6 @@ class GenericUnixStrategy:
             "-force-single-frontend-invocation "
             "-swift-version 4 "
             "-I {foundation_build_dir} -I {core_foundation_build_dir} "
-            "-I /usr/include -D CYGWIN "
             "{libdispatch_args} "
             "{source_paths} -o {build_dir}/XCTest.o".format(
                 swiftc=swiftc,
@@ -201,7 +200,7 @@ class GenericUnixStrategy:
                 libdispatch_args=libdispatch_args,
                 source_paths=" ".join(sourcePaths)))
         run("{swiftc} -emit-library {build_dir}/XCTest.o "
-            "-L {foundation_build_dir} -lswiftGlibc -lswiftCore -lFoundation -lm "
+            "-L {foundation_build_dir} -lswiftCore -lFoundation -lm "
             # We embed an rpath of `$ORIGIN` to ensure other referenced
             # libraries (like `Foundation`) can be found solely via XCTest.
             "-Xlinker -rpath=\\$ORIGIN "
@@ -211,7 +210,7 @@ class GenericUnixStrategy:
                 foundation_build_dir=foundation_build_dir))
 
         # Build the static library.
-        run("mkdir -p {static_lib_build_dir}".format(static_lib_build_dir=static_lib_build_dir))
+        run("env mkdir -p {static_lib_build_dir}".format(static_lib_build_dir=static_lib_build_dir))
         run("ar rcs {static_lib_build_dir}/libXCTest.a {build_dir}/XCTest.o".format(
             static_lib_build_dir=static_lib_build_dir,
             build_dir=build_dir))

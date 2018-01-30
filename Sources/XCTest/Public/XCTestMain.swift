@@ -24,8 +24,6 @@
     import Darwin
 #elseif os(Linux) || os(FreeBSD)
     import Glibc
-#elseif CYGWIN
-    import Newlib
 #endif
 
 /// Starts a test run for the specified test cases.
