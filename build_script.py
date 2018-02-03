@@ -199,13 +199,21 @@ class GenericUnixStrategy:
                 core_foundation_build_dir=core_foundation_build_dir,
                 libdispatch_args=libdispatch_args,
                 source_paths=" ".join(sourcePaths)))
+
+        # Cygwin needs more options
+        is_cygwin = platform.system().startswith("CYGWIN")
+        additional_options = ""
+        if is_cygwin:
+            additional_options = "-Xlinker --allow-multiple-definition -licui18n -lxml2 -licuuc "
         run("{swiftc} -emit-library {build_dir}/XCTest.o "
             "-L {foundation_build_dir} -lswiftCore -lFoundation -lm "
             # We embed an rpath of `$ORIGIN` to ensure other referenced
             # libraries (like `Foundation`) can be found solely via XCTest.
             "-Xlinker -rpath=\\$ORIGIN "
+            "{additional_options} "
             "-o {build_dir}/libXCTest.dll".format(
                 swiftc=swiftc,
+                additional_options=additional_options,
                 build_dir=build_dir,
                 foundation_build_dir=foundation_build_dir))
 
