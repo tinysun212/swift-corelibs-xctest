@@ -206,7 +206,7 @@ class GenericUnixStrategy:
         if is_cygwin:
             additional_options = "-Xlinker --allow-multiple-definition -licui18n -lxml2 -licuuc "
         run("{swiftc} -emit-library {build_dir}/XCTest.o "
-            "-L {foundation_build_dir} -lswiftCore -lFoundation -lm "
+            "-L {dispatch_build_dir} -L {foundation_build_dir} -lswiftCore -lFoundation -lm "
             # We embed an rpath of `$ORIGIN` to ensure other referenced
             # libraries (like `Foundation`) can be found solely via XCTest.
             "-Xlinker -rpath=\\$ORIGIN "
@@ -215,6 +215,7 @@ class GenericUnixStrategy:
                 swiftc=swiftc,
                 additional_options=additional_options,
                 build_dir=build_dir,
+                dispatch_build_dir=os.path.join(args.libdispatch_build_dir, 'src', '.libs'),
                 foundation_build_dir=foundation_build_dir))
 
         # Build the static library.
